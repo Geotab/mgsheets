@@ -66,7 +66,7 @@ function getDeviceById_(deviceId) {
   });
 
   if (devices.length === 1) {
-    docCache.put("device-" + deviceId, device, 600);
+    docCache.put("device-" + deviceId, devices[0], 600);
     return devices[0];
   }
   return null;
@@ -274,6 +274,17 @@ function MGTRIPS(vehicle, fromDate, toDate, showHeadings, refresh) {
 
   var result = trips.map(function (trip) {
     var values = [];
+    
+    values.push(trip.device.id);
+    values.push(getDeviceById_(trip.device.id).name);
+    if (trip.driver === "UnknownDriverId") {
+      values.push(1);            
+      values.push("Unknown");
+    }
+    else {
+      values.push(trip.driver.id);            
+      values.push(getDriverById_(trip.driver.id).name);
+    }
     values.push(trip.distance);
     values.push(timespan(trip.drivingDuration).getDuration());
     values.push(timespan(trip.idlingDuration).getDuration());
@@ -289,7 +300,7 @@ function MGTRIPS(vehicle, fromDate, toDate, showHeadings, refresh) {
   });
 
   if (showHeadings === true) {
-    values = ["Distance", "DrivingDuration", "IdlingDuration", "MaximumSpeed", "AverageSpeed", "DrivingStart", "DrivingStop", "NextTripStart", "StopDuration", "x", "y"];
+    values = ["DeviceId", "DeviceName", "DriverId", "DriverName", "Distance", "DrivingDuration", "IdlingDuration", "MaximumSpeed", "AverageSpeed", "DrivingStart", "DrivingStop", "NextTripStart", "StopDuration", "x", "y"];
     result.unshift(values);
   }
   return result;
