@@ -30,9 +30,9 @@ function getDeviceId_(anyDeviceSearchValue) {
     return devices[0].id;
   }
   if (devices.length > 1) {
-    throw "The vehicle search criteria provided resulted in ambigious results. You need to specify search criteria that yields exactly one vehicle. " + 
-          "You may use a wildcard search such as 'DODGE%' where any vehicle starting with DODGE is returned. However, there must be one " + 
-          "matching vehicle.";
+    throw "The vehicle search criteria provided resulted in ambigious results. You need to specify search criteria that yields exactly one vehicle. " +
+    "You may use a wildcard search such as 'DODGE%' where any vehicle starting with DODGE is returned. However, there must be one " +
+    "matching vehicle.";
   }
   return null;
 }
@@ -46,10 +46,10 @@ function getDeviceId_(anyDeviceSearchValue) {
  * @customfunction
  */
 function getDeviceById_(deviceId) {
-  var docCache,
-    device,
+  var device,
     devices,
-    api;
+    api,
+    docCache;
 
   docCache = CacheService.getDocumentCache();
   device = docCache.get("device-" + deviceId);
@@ -189,17 +189,17 @@ function MGSTATUS(vehicles, showHeadings, refresh) {
 
     status = status[0];
     Logger.log(status);
-    
+
     values.push(status.device.id);
     values.push(getDeviceById_(status.device.id).name);
     if (status.driver === "UnknownDriverId") {
-      values.push(1);            
+      values.push(1);
       values.push("Unknown");
     }
     else {
-      values.push(status.driver.id);            
+      values.push(status.driver.id);
       values.push(getDriverById_(status.driver.id).name);
-    }                
+    }
     values.push(status.bearing);
     values.push(timespan(status.currentStateDuration).getDuration());
     values.push(status.isDeviceCommunicating);
@@ -235,7 +235,8 @@ function MGTRIPS(vehicle, fromDate, toDate, showHeadings, refresh) {
     deviceId,
     values,
     timespan = TimeSpan(),
-    tripSearch;
+    tripSearch,
+    deviceCache = {};
 
   if (fromDate !== undefined) {
     // Something was passed, but was it null or a valid date?
@@ -274,15 +275,21 @@ function MGTRIPS(vehicle, fromDate, toDate, showHeadings, refresh) {
 
   var result = trips.map(function (trip) {
     var values = [];
-    
+
     values.push(trip.device.id);
+    
+    if (!(trip.device.id in deviceCache)) {
+        deviceCache[trip.device.id] = getDeviceById_(trip.device.id);
+    }
+    values.push(deviceCache[trip.device.id].name);
+
     values.push(getDeviceById_(trip.device.id).name);
     if (trip.driver === "UnknownDriverId") {
-      values.push(1);            
+      values.push(1);
       values.push("Unknown");
     }
     else {
-      values.push(trip.driver.id);            
+      values.push(trip.driver.id);
       values.push(getDriverById_(trip.driver.id).name);
     }
     values.push(trip.distance);
