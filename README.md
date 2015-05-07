@@ -8,6 +8,9 @@ It allows you to easily add a formula in your Google Sheet, such as
 This function will return the recent **Trips** for the vehicle named **Company Van**.
 
 ## Custom functions
+Google sheets will provide you with help if you type the function name inside the cell. 
+For example =MGTRIPS( 
+![](images/function-help.png)
 
 ### MGMAPURL
 Returns a URL to a static map image for the location provided.
