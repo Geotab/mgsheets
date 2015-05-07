@@ -111,8 +111,14 @@ function MyGeotabApi(session) {
               throw "Please authenticate - session expired or credentials no longer valid";
             }
           }
-          // TODO: Not actually sure what this will do to be honest.
-          throw rpcResult.error;
+          
+          // The actual RPC call failed. Show info about it.
+          var description = "An error occured making the API call. \n";
+          description += "Arguments sent: \n";
+          description += JSON.stringify(params) + "\n";
+          description += "Error: \n";
+          description += JSON.stringify(rpcResult);
+          throw description;
         }
       },
        
