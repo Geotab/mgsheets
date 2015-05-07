@@ -4,6 +4,12 @@
 //  range.setValue(range.getValue()+1);
 //}
 
+/**
+ * Returns the ID for a device given some arbitrary search string. 
+ *
+ * @param {string} A string describing the vehicle. Currently the name property is searched on. Wildcard with % is supported.
+ * @return {object} The device ID, if found
+ */
 function getDeviceId_(anyDeviceSearchValue) {
   var docCache,
     device,
@@ -43,8 +49,7 @@ function getDeviceId_(anyDeviceSearchValue) {
  *
  * @param {string} deviceId The device ID
  * @return {object} A device oject
- * @customfunction
- */
+  */
 function getDeviceById_(deviceId) {
   var device,
     devices,
@@ -77,8 +82,7 @@ function getDeviceById_(deviceId) {
  *
  * @param {string} deviceId The device ID
  * @return {object} A device oject
- * @customfunction
- */
+  */
 function getDriverById_(driverId) {
   var docCache,
     driver,
@@ -219,7 +223,7 @@ function MGSTATUS(vehicles, showHeadings, refresh) {
 }
     
 /**
- * Returns the trips for the given vehicle. Up to 500 trips are returned. If a from and to date is specified, only trips during this period is included.
+ * Returns the trips for the given vehicle. Up to 1000 trips are returned. If a from and to date is specified, only trips during this period are included.
  *
  * @param {string} vehicle The vehicle description or part thereof. It must be unique and can accept wildcard character %.
  * @param {Date} fromDate Trips after this value will be returned.
@@ -272,7 +276,7 @@ function MGTRIPS(vehicle, fromDate, toDate, showHeadings, refresh) {
     tripSearch.toDate = toDate;
   }
 
-  trips = api.get("Trip", tripSearch, 500);
+  trips = api.get("Trip", tripSearch, 1000);
 
   var result = trips.map(function (trip) {
     var values = [];
@@ -348,6 +352,9 @@ function MGREVERSEGEOCODE(location) {
   }
 }
 
+/**
+ * Fires when the Google Sheet is opened and adds the menu item required. 
+ */
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu("MyGeotab")
@@ -355,6 +362,9 @@ function onOpen() {
     .addToUi();
 };
 
+/**
+ * Opens the sideBar where the user can provide credentials.
+ */
 function openSideBar() {
   var html = HtmlService.createHtmlOutputFromFile('login')
     .setSandboxMode(HtmlService.SandboxMode.IFRAME)
@@ -363,6 +373,11 @@ function openSideBar() {
   SpreadsheetApp.getUi().showSidebar(html);
 }
 
+/**
+ * Called from the login.html page when the user provides credentials. 
+ *
+ * @param {object} formObject The form passed by the user. We can read the credentials from this, authenticate and store a session.
+ */
 function getLoginCredentials(formObject) {
   Logger.log("got credentials");
   var api = MyGeotabApi();
