@@ -6,25 +6,25 @@
 
 function getDeviceId_(anyDeviceSearchValue) {
   var docCache,
-      device,
-      deviceId,
-      devices,
-      api;
-  
+    device,
+    deviceId,
+    devices,
+    api;
+
   docCache = CacheService.getDocumentCache();
   deviceId = docCache.get("deviceId-" + anyDeviceSearchValue);
-  
+
   if (deviceId !== null) {
     return deviceId;
   }
-  
+
   api = getApi_();
   
   // Search by name
   devices = api.get("Device", {
-    name : anyDeviceSearchValue
+    name: anyDeviceSearchValue
   });
-  
+
   if (devices.length === 1) {
     docCache.put("deviceId-" + anyDeviceSearchValue, devices[0].id, 600);
     return devices[0].id;
@@ -53,13 +53,13 @@ function getApi_() {
  */
 function MGMAPURL(location, color, width, height, zoom) {
   var mainUrl = "https://api.tiles.mapbox.com/v4/geotab.i8d8afbp/",
-      accessToken = "?access_token=pk.eyJ1IjoiZ2VvdGFiIiwiYSI6IjBqUDNodmsifQ.BJF8wMClneBH89oxyaTuxw",
-      color = color || 482,
-      width = width || 100,
-      height = height || 100,
-      zoom = zoom || 17,
-      x, y;
-  
+    accessToken = "?access_token=pk.eyJ1IjoiZ2VvdGFiIiwiYSI6IjBqUDNodmsifQ.BJF8wMClneBH89oxyaTuxw",
+    color = color || 482,
+    width = width || 100,
+    height = height || 100,
+    zoom = zoom || 17,
+    x, y;
+
   if (location.map) {
     x = location[0][0];
     y = location[0][1];
@@ -67,8 +67,8 @@ function MGMAPURL(location, color, width, height, zoom) {
     x = 0;
     y = 0;
   }
-  
-  return mainUrl + "pin-l-car+" + color + "(" + x + "," + y + ")/"+ x + "," + y +"," + zoom + "/" + width + "x" + height + ".png" + accessToken;
+
+  return mainUrl + "pin-l-car+" + color + "(" + x + "," + y + ")/" + x + "," + y + "," + zoom + "/" + width + "x" + height + ".png" + accessToken;
 }
 
 /**
@@ -81,15 +81,15 @@ function MGMAPURL(location, color, width, height, zoom) {
  * @customfunction
  */
 function MGSTATUS(vehicles, showHeadings, refresh) {
-  
+
   var api = getApi_(),
-      statuses = [],
-      status,
-      deviceId,
-      values,
-      i,
-      timespan = TimeSpan();
-  
+    statuses = [],
+    status,
+    deviceId,
+    values,
+    i,
+    timespan = TimeSpan();
+
   if (vehicles.map) {
     // A two dimentional array is returned. Pull out first item
     vehicles = vehicles.map(function (item) {
@@ -99,8 +99,8 @@ function MGSTATUS(vehicles, showHeadings, refresh) {
     // Just one - add it to an array with multiple
     vehicles = [vehicles];
   }
-  
-  for (i=0; i < vehicles.length; i++) {
+
+  for (i = 0; i < vehicles.length; i++) {
     values = [];
     deviceId = getDeviceId_(vehicles[i]);
     if (deviceId == null) {
@@ -108,13 +108,16 @@ function MGSTATUS(vehicles, showHeadings, refresh) {
       continue;
     }
     status = api.get("DeviceStatusInfo", {
-      deviceSearch : {
-        id : deviceId
+      deviceSearch: {
+        id: deviceId
       }
     });
-    
+
     status = status[0];
     Logger.log(status);
+    
+    values.push(status.device.id);            
+    values.push(status.driver.id);            
     values.push(status.bearing);
     values.push(timespan(status.currentStateDuration).getDuration());
     values.push(status.isDeviceCommunicating);
@@ -125,7 +128,7 @@ function MGSTATUS(vehicles, showHeadings, refresh) {
     values.push(new Date(Date.parse(status.dateTime)));
     statuses.push(values);
   }
-  
+
   if (showHeadings === true) {
     values = ["Bearing", "Duration", "IsCommunicating", "IsDriving", "x", "y", "Speed", "DateTime"];
     statuses.unshift(values);
@@ -146,24 +149,47 @@ function MGSTATUS(vehicles, showHeadings, refresh) {
  */
 function MGTRIPS(vehicle, fromDate, toDate, showHeadings, refresh) {
   var api = getApi_(),
-      trips,
-      deviceId,
-      values,
-      timespan = TimeSpan();
-    
+    trips,
+    deviceId,
+    values,
+    timespan = TimeSpan(),
+    tripSearch;
+
+  if (fromDate !== undefined) {
+    // Something was passed, but was it null or a valid date?
+    if (fromDate && !(fromDate instanceof Date)) {
+      throw "fromDate was provided but it is not a valid Date."
+    }
+  }
+
+  if (toDate !== undefined) {
+    // Something was passed, but was it null or a valid date?
+    if (toDate && !(toDate instanceof Date)) {
+      throw "toDate was provided but it is not a valid Date."
+    }
+  }
+
   deviceId = getDeviceId_(vehicle);
   if (deviceId === null) {
     throw "Can't find vehicle: " + vehicle;
   }
-    
-  trips = api.get("Trip", {
-    deviceSearch : {
-      id : deviceId
-    },
-    fromDate : fromDate,
-    toDate : toDate
-  }, 500);
-  
+
+  tripSearch = {
+    deviceSearch: {
+      id: deviceId
+    }
+  };
+
+  if (fromDate instanceof Date) {
+    tripSearch.fromDate = fromDate;
+  }
+
+  if (toDate instanceof Date) {
+    tripSearch.toDate = toDate;
+  }
+
+  trips = api.get("Trip", tripSearch, 500);
+
   var result = trips.map(function (trip) {
     var values = [];
     values.push(trip.distance);
@@ -179,7 +205,7 @@ function MGTRIPS(vehicle, fromDate, toDate, showHeadings, refresh) {
     values.push(trip.stopPoint.y);
     return values;
   });
-  
+
   if (showHeadings === true) {
     values = ["Distance", "DrivingDuration", "IdlingDuration", "MaximumSpeed", "AverageSpeed", "DrivingStart", "DrivingStop", "NextTripStart", "StopDuration", "x", "y"];
     result.unshift(values);
@@ -195,17 +221,17 @@ function MGTRIPS(vehicle, fromDate, toDate, showHeadings, refresh) {
  */
 function MGREVERSEGEOCODE(location) {
   var x, y;
- 
+
   if (!location.map) {
     throw "Please select two cells like [A1:B1] containing longitude (x) and latitude (y)";
-  } 
-  
+  }
+
   x = location[0][0];
   y = location[0][1];
 
   var geocoder = Maps.newGeocoder();
-  var result = geocoder.reverseGeocode(x, y);
-  
+  var result = geocoder.reverseGeocode(y, x);
+
   if (result.status == "OK") {
     if (result.results.length >= 1) {
       return result.results[0].formatted_address;
@@ -221,24 +247,24 @@ function MGREVERSEGEOCODE(location) {
 
 function onOpen() {
   SpreadsheetApp.getUi()
-  .createMenu("MyGeotab")
-  .addItem("Open sidebar", "openSideBar")
-  .addToUi();
+    .createMenu("MyGeotab")
+    .addItem("Open sidebar", "openSideBar")
+    .addToUi();
 };
 
 function openSideBar() {
   var html = HtmlService.createHtmlOutputFromFile('login')
-      .setSandboxMode(HtmlService.SandboxMode.IFRAME)
-      .setTitle('MyGeotab Login')
-      .setWidth(250);
+    .setSandboxMode(HtmlService.SandboxMode.IFRAME)
+    .setTitle('MyGeotab Login')
+    .setWidth(250);
   SpreadsheetApp.getUi().showSidebar(html);
 }
 
 function getLoginCredentials(formObject) {
   Logger.log("got credentials");
-  var api  = MyGeotabApi();
+  var api = MyGeotabApi();
   var session = api.authenticate(formObject.userName, formObject.password, formObject.database);
-  
+
   var docProperties = PropertiesService.getDocumentProperties();
   docProperties.setProperty('api-session', JSON.stringify(session));
 
