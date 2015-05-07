@@ -71,8 +71,8 @@ function getDeviceById_(deviceId) {
   });
 
   if (devices.length === 1) {
-    docCache.put("device-" + deviceId, devices[0], 600);
-    return JSON.stringify(devices[0]);
+    docCache.put("device-" + deviceId, JSON.stringify(devices[0]), 600);
+    return devices[0];
   }
   return null;
 }
