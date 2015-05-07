@@ -29,6 +29,80 @@ function getDeviceId_(anyDeviceSearchValue) {
     docCache.put("deviceId-" + anyDeviceSearchValue, devices[0].id, 600);
     return devices[0].id;
   }
+  if (devices.length > 1) {
+    throw "The vehicle search criteria provided resulted in ambigious results. You need to specify search criteria that yields exactly one vehicle. " + 
+          "You may use a wildcard search such as 'DODGE%' where any vehicle starting with DODGE is returned. However, there must be one " + 
+          "matching vehicle.";
+  }
+  return null;
+}
+
+
+/**
+ * Returns a Device object for the given device ID 
+ *
+ * @param {string} deviceId The device ID
+ * @return {object} A device oject
+ * @customfunction
+ */
+function getDeviceById_(deviceId) {
+  var docCache,
+    device,
+    devices,
+    api;
+
+  docCache = CacheService.getDocumentCache();
+  device = docCache.get("device-" + deviceId);
+
+  if (device !== null) {
+    return device;
+  }
+
+  api = getApi_();
+  
+  // Search by id
+  devices = api.get("Device", {
+    id: deviceId
+  });
+
+  if (devices.length === 1) {
+    docCache.put("device-" + deviceId, device, 600);
+    return devices[0];
+  }
+  return null;
+}
+
+/**
+ * Returns a Device object for the given device ID 
+ *
+ * @param {string} deviceId The device ID
+ * @return {object} A device oject
+ * @customfunction
+ */
+function getDriverById_(driverId) {
+  var docCache,
+    driver,
+    drivers,
+    api;
+
+  docCache = CacheService.getDocumentCache();
+  driver = docCache.get("driver-" + driverId);
+
+  if (driver !== null) {
+    return driver;
+  }
+
+  api = getApi_();
+  
+  // Search by id
+  drivers = api.get("User", {
+    id: driverId
+  });
+
+  if (drivers.length === 1) {
+    docCache.put("driver-" + driverId, driverId, 600);
+    return drivers[0];
+  }
   return null;
 }
 
@@ -116,8 +190,16 @@ function MGSTATUS(vehicles, showHeadings, refresh) {
     status = status[0];
     Logger.log(status);
     
-    values.push(status.device.id);            
-    values.push(status.driver.id);            
+    values.push(status.device.id);
+    values.push(getDeviceById_(status.device.id).name);
+    if (status.driver === "UnknownDriverId") {
+      values.push(1);            
+      values.push("Unknown");
+    }
+    else {
+      values.push(status.driver.id);            
+      values.push(getDriverById_(status.driver.id).name);
+    }                
     values.push(status.bearing);
     values.push(timespan(status.currentStateDuration).getDuration());
     values.push(status.isDeviceCommunicating);
@@ -130,7 +212,7 @@ function MGSTATUS(vehicles, showHeadings, refresh) {
   }
 
   if (showHeadings === true) {
-    values = ["Bearing", "Duration", "IsCommunicating", "IsDriving", "x", "y", "Speed", "DateTime"];
+    values = ["DeviceId", "DeviceName", "DriverId", "Bearing", "Duration", "IsCommunicating", "IsDriving", "x", "y", "Speed", "DateTime"];
     statuses.unshift(values);
   }
   return statuses;
