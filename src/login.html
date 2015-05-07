@@ -30,12 +30,7 @@
     document.getElementById('errorMessage').innerHTML = "";
     google.script.run.withSuccessHandler(closeWindow).withFailureHandler(showError).getLoginCredentials(document.getElementById('loginForm'));
   }
-  
-  function closeWindow() {
-    google.script.run.populateVehicles();
-    google.script.host.close();
-  }
-  
+ 
   function showError(e) {
     document.getElementById('errorMessage').innerHTML = "Invalid username or password";
   }
