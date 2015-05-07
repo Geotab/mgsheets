@@ -55,7 +55,7 @@ function getDeviceById_(deviceId) {
   device = docCache.get("device-" + deviceId);
 
   if (device !== null) {
-    return device;
+    return JSON.parse(device);
   }
 
   api = getApi_();
@@ -67,7 +67,7 @@ function getDeviceById_(deviceId) {
 
   if (devices.length === 1) {
     docCache.put("device-" + deviceId, devices[0], 600);
-    return devices[0];
+    return JSON.stringify(devices[0]);
   }
   return null;
 }
@@ -89,7 +89,7 @@ function getDriverById_(driverId) {
   driver = docCache.get("driver-" + driverId);
 
   if (driver !== null) {
-    return driver;
+    return JSON.parse(driver);
   }
 
   api = getApi_();
@@ -100,7 +100,7 @@ function getDriverById_(driverId) {
   });
 
   if (drivers.length === 1) {
-    docCache.put("driver-" + driverId, driverId, 600);
+    docCache.put("driver-" + driverId, JSON.stringify(drivers[0]), 600);
     return drivers[0];
   }
   return null;
@@ -212,7 +212,7 @@ function MGSTATUS(vehicles, showHeadings, refresh) {
   }
 
   if (showHeadings === true) {
-    values = ["DeviceId", "DeviceName", "DriverId", "Bearing", "Duration", "IsCommunicating", "IsDriving", "x", "y", "Speed", "DateTime"];
+    values = ["DeviceId", "DeviceName", "DriverId", "DriverName", "Bearing", "Duration", "IsCommunicating", "IsDriving", "x", "y", "Speed", "DateTime"];
     statuses.unshift(values);
   }
   return statuses;
@@ -236,7 +236,8 @@ function MGTRIPS(vehicle, fromDate, toDate, showHeadings, refresh) {
     values,
     timespan = TimeSpan(),
     tripSearch,
-    deviceCache = {};
+    deviceCache = {},
+    driverCache = {};
 
   if (fromDate !== undefined) {
     // Something was passed, but was it null or a valid date?
@@ -283,14 +284,16 @@ function MGTRIPS(vehicle, fromDate, toDate, showHeadings, refresh) {
     }
     values.push(deviceCache[trip.device.id].name);
 
-    values.push(getDeviceById_(trip.device.id).name);
     if (trip.driver === "UnknownDriverId") {
       values.push(1);
       values.push("Unknown");
     }
     else {
+      if (!(trip.driver.id in driverCache)) {
+          driverCache[trip.driver.id] = getDriverById_(trip.driver.id);
+      }
       values.push(trip.driver.id);
-      values.push(getDriverById_(trip.driver.id).name);
+      values.push(driverCache[trip.driver.id].name);
     }
     values.push(trip.distance);
     values.push(timespan(trip.drivingDuration).getDuration());
