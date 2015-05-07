@@ -7,8 +7,19 @@ It allows you to easily add a formula in your Google Sheet, such as
 
 This function will return the recent **Trips** for the vehicle named **Company Van**.
 
+## Custom functions
 
+### MGMAPURL
+Returns a URL to a static map image for the location provided.
 
+Parameter  | Description
+-----------|------------
+location | The longitude (x) and latitude (y). Select a range of cells horizontally next to each other.
+color | The 3 or 6 digit HEX color value. For example, "F0F" or "FF00FF"
+width | The width of the map in pixels
+height | The height of the map in pixels 
+zoom | The zoom level. Default is 17 (street level). 1 is the whole world.
+ 
 
 
 
