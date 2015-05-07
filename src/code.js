@@ -12,7 +12,6 @@
  */
 function getDeviceId_(anyDeviceSearchValue) {
   var docCache,
-    device,
     deviceId,
     devices,
     api;
@@ -59,8 +58,14 @@ function getDeviceById_(deviceId) {
   docCache = CacheService.getDocumentCache();
   device = docCache.get("device-" + deviceId);
 
-  if (device !== null) {
-    return JSON.parse(device);
+    if (device !== null) {
+    try {
+      device = JSON.parse(device);
+      return device;
+    }
+    catch (err) {
+      docCache.remove("device-" + deviceId);
+    }
   }
 
   api = getApi_();
@@ -93,7 +98,13 @@ function getDriverById_(driverId) {
   driver = docCache.get("driver-" + driverId);
 
   if (driver !== null) {
-    return JSON.parse(driver);
+    try {
+      driver = JSON.parse(driver);
+      return driver;
+    }
+    catch (err) {
+       docCache.remove("driver-" + driverId);
+      }
   }
 
   api = getApi_();
@@ -132,11 +143,13 @@ function getApi_() {
 function MGMAPURL(location, color, width, height, zoom) {
   var mainUrl = "https://api.tiles.mapbox.com/v4/geotab.i8d8afbp/",
     accessToken = "?access_token=pk.eyJ1IjoiZ2VvdGFiIiwiYSI6IjBqUDNodmsifQ.BJF8wMClneBH89oxyaTuxw",
-    color = color || 482,
-    width = width || 100,
-    height = height || 100,
-    zoom = zoom || 17,
     x, y;
+    
+    // Setup defaults
+    color = color || 482;
+    width = width || 100;
+    height = height || 100;
+    zoom = zoom || 17;
 
   if (location.map) {
     x = location[0][0];
@@ -282,9 +295,9 @@ function MGTRIPS(vehicle, fromDate, toDate, showHeadings, refresh) {
     var values = [];
 
     values.push(trip.device.id);
-    
+
     if (!(trip.device.id in deviceCache)) {
-        deviceCache[trip.device.id] = getDeviceById_(trip.device.id);
+      deviceCache[trip.device.id] = getDeviceById_(trip.device.id);
     }
     values.push(deviceCache[trip.device.id].name);
 
@@ -294,7 +307,7 @@ function MGTRIPS(vehicle, fromDate, toDate, showHeadings, refresh) {
     }
     else {
       if (!(trip.driver.id in driverCache)) {
-          driverCache[trip.driver.id] = getDriverById_(trip.driver.id);
+        driverCache[trip.driver.id] = getDriverById_(trip.driver.id);
       }
       values.push(trip.driver.id);
       values.push(driverCache[trip.driver.id].name);
