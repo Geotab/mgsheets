@@ -9,7 +9,8 @@ This function will return the recent **Trips** for the vehicle named **Company V
 
 ## Custom functions
 Google sheets will provide you with help if you type the function name inside the cell. 
-For example =MGTRIPS( 
+For example =MGTRIPS(
+ 
 ![](images/function-help.png)
 
 ### MGMAPURL
