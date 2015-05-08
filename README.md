@@ -13,6 +13,4 @@ For example =MGTRIPS(
  
 ![](images/function-help.png)
 
-If you want to use this in a Google Spreadsheet - open the script editor and add all the files in the scr folder to the project. Note that you should rename the .js files to .gs. 
-
-This is a live demo
+If you want to use this in a Google Spreadsheet - open the script editor and add all the files in the scr folder to the project. Note that you should rename the .js files to .gs.
