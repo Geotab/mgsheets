@@ -87,7 +87,7 @@ function MyGeotabApi(session) {
         var rpcResult;
         
         if (session === null) {
-          throw "Call Authenticate before using the API object";
+          throw "Click on the menu MyGeotab > Login and try again.";
         }
 
         // Session should have valid credentials stored (username/db/sessionId)

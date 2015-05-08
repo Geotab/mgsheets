@@ -1,37 +1,46 @@
 <!DOCTYPE html>
 <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css">
 <div>
-  <form id="loginForm" name="loginForm">
-    <div class="block form-group">
-      <span class="error">
-        <label id="errorMessage"></label>
-      </span>
-    </div>
-    <div class="block form-group">
-      <label for="userName">Email address</label>
-      <input type="text" value="" name="userName" />
-    </div>
-    <div class="block form-group">
-      <label for="password">Password</label>
-      <input type="password" value="" name="password" />
-    </div>
-    <div class="block form-group">
-      <label for="database">Database</label>
-      <input type="text" value="" name="database" />
-    </div>
-    <div class="block">
-      <input type="button" value="Cancel" id="cancelButton" onclick="google.script.host.close()" />
-      <input class="action" type="button" value="OK" id="okButton" onclick="login()" />
-    </div>
-  </form>
+    <form id="loginForm" name="loginForm">
+        <div class="block form-group">
+            <span class="error">
+                <label id="errorMessage"></label>
+            </span>
+            <span class="gray">
+                <label id="progressMessage"></label>
+            </span>
+        </div>
+        <div class="block form-group">
+            <label for="userName">Email address</label>
+            <input type="text" value="" name="userName" />
+        </div>
+        <div class="block form-group">
+            <label for="password">Password</label>
+            <input type="password" value="" name="password" />
+        </div>
+        <div class="block form-group">
+            <label for="database">Database</label>
+            <input type="text" value="" name="database" />
+        </div>
+        <div class="block">
+            <input type="button" value="Cancel" id="cancelButton" onclick="google.script.host.close()" />
+            <input type="button" value="OK" id="okButton" class="action" onclick="login()" />
+        </div>
+    </form>
 </div>
 <script>
-  function login() {
-    document.getElementById('errorMessage').innerHTML = "";
-    google.script.run.withSuccessHandler(closeWindow).withFailureHandler(showError).getLoginCredentials(document.getElementById('loginForm'));
-  }
- 
-  function showError(e) {
-    document.getElementById('errorMessage').innerHTML = "Invalid username or password";
-  }
+    function login() {
+        document.getElementById('errorMessage').innerHTML = "";
+        document.getElementById('progressMessage').innerHTML = "Hold on tight. Let me check that for you...";
+        google.script.run.withSuccessHandler(closeWindow).withFailureHandler(showError).getLoginCredentials(document.getElementById('loginForm'));
+      }
+     
+      function showError(e) {
+        document.getElementById('progressMessage').innerHTML = "";
+        document.getElementById('errorMessage').innerHTML = "Oops. That wasn't correct. Check your username, password and database.";
+      }
+      
+        function closeWindow() {
+        google.script.host.close();
+      }
 </script>

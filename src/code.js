@@ -371,7 +371,7 @@ function MGREVERSEGEOCODE(location) {
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu("MyGeotab")
-    .addItem("Open sidebar", "openSideBar")
+    .addItem("Login", "openSideBar")
     .addToUi();
 };
 
@@ -394,8 +394,16 @@ function openSideBar() {
 function getLoginCredentials(formObject) {
   Logger.log("got credentials");
   var api = MyGeotabApi();
+    
   var session = api.authenticate(formObject.userName, formObject.password, formObject.database);
+  
+  var htmlOutput = HtmlService.createHtmlOutputFromFile('authenticated')
+     .setSandboxMode(HtmlService.SandboxMode.IFRAME)
+     .setWidth(400)
+     .setHeight(300);
+ SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Ready to rumble!');
 
+  
   var docProperties = PropertiesService.getDocumentProperties();
   docProperties.setProperty('api-session', JSON.stringify(session));
 
