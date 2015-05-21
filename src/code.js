@@ -128,95 +128,6 @@ function getApi_() {
     return api;
 }
 
-function getExtent(points) {
-    var extent = [], i, minLat, minLong, maxLat, maxLong, currentLat, currentLong;
-    minLat = points[0];
-    minLong = points[1];
-    maxLat = points[0];
-    maxLong = points[1];
-    for (i = 2; i < points.length; i += 2) {
-        currentLat = points[i];
-        currentLong = points[i + 1];
-        if (currentLat < minLat) {
-            minLat = currentLat;
-        }
-        if (currentLat > maxLat) {
-            maxLat = currentLat;
-        }
-        if (currentLong < minLong) {
-            minLong = currentLong;
-        }
-        if (currentLong > maxLong) {
-            maxLong = currentLong;
-        }
-    }
-    extent.push(minLat);
-    extent.push(minLong);
-    extent.push(maxLat);
-    extent.push(maxLong);
-    return extent;
-}
-
-function getGeoJson(points) {
-  
-    // TODO: What if start/end markers are on top of eachother?
-    var lineCoordinates, i,
-        template =
-            {
-                type: "FeatureCollection",
-                features: [
-                    {
-                        type: "Feature",
-                        properties: {
-                            stroke: "#0b10ff",
-                            "stroke-width": 5,
-                            "stroke-opacity": 0.5
-                        },
-                        geometry: {
-                            type: "LineString",
-                            coordinates: []
-                        }
-                    },
-                    {
-                        type: "Feature",
-                        properties: {
-                            "marker-color": "#f50000",
-                            "marker-size": "medium",
-                            "marker-symbol": "embassy"
-                        },
-                        geometry: {
-                            type: "Point",
-                            coordinates: []
-                        }
-                    },
-                    {
-                        type: "Feature",
-                        properties: {
-                            "marker-color": "#00aa00",
-                            "marker-size": "large",
-                            "marker-symbol": "car"
-                        },
-                        geometry: {
-                            type: "Point",
-                            coordinates: []
-                        }
-                    }
-                ]
-            };
-  
-    // Grab a reference to the array
-    lineCoordinates = template.features[0].geometry.coordinates;
-
-    for (i = 0; i < points.length; i += 2) {
-        lineCoordinates.push([points[i + 1], points[i]]);
-    }
-
-    template.features[1].geometry.coordinates = [points[1], points[0]];
-    template.features[2].geometry.coordinates = [points[points.length - 1], points[points.length - 2]];
-
-    return template;
-}
-
 /**
  * Returns a URL that will show a given Trip on the map
  *
@@ -225,16 +136,19 @@ function getGeoJson(points) {
  * @param {number} width The width of the map in pixels
  * @param {number} height The height of the map in pixels 
  * @param {number} strokeWidth How thick the line should be
+ * @param {boolean} showMarkers Turn the start/end markers on or off. Default is on.
  * @return {string} A URL that links to a static map image.
  * @customfunction
  */
-function MGMAPTRIPURL(vehicle, fromDate, toDate, color, width, height, strokeWidth) {
+function MGMAPTRIPURL(vehicle, fromDate, toDate, color, width, height, strokeWidth, showMarkers) {
     // TODO: Extract these constants
     var mainUrl = "https://api.tiles.mapbox.com/v4/geotab.i8d8afbp/",
         accessToken = "?access_token=pk.eyJ1IjoiZ2VvdGFiIiwiYSI6IjBqUDNodmsifQ.BJF8wMClneBH89oxyaTuxw",
         api = getApi_(),
         logs,
-        logRecordSearch;
+        logRecordSearch,
+        i,
+        deviceId;
 
     if (fromDate !== undefined) {
         // Something was passed, but was it null or a valid date?
@@ -269,48 +183,60 @@ function MGMAPTRIPURL(vehicle, fromDate, toDate, color, width, height, strokeWid
     if (toDate instanceof Date) {
         logRecordSearch.toDate = toDate;
     }
-    
+     
     // Setup defaults
     color = color || 482;
     width = width || 350;
     height = height || 350;
     strokeWidth = strokeWidth || 3;
+    showMarkers = showMarkers || true;
   
     // Got a trip ID - now render it
-    logs = api.get("LogRecord", logRecordSearch, 1000);
-    
+    logs = api.get("LogRecord", logRecordSearch, 50000);
+
     logs.sort(function (logA, logB) {
         var dateA = new Date(Date.parse(logA.dateTime)),
             dateB = new Date(Date.parse(logB.dateTime));
         return dateA - dateB;
     });
 
-    var coordinates = [];
-    for (i = 0; i < logs.length; i++) {
-        coordinates.push(logs[i].latitude);
-        coordinates.push(logs[i].longitude);
+    // Max of 2048 total URL length we have to work with (MapBox has double that but Google sheets limits you at 2048.
+    // Fixed URL overhead (access token, URL, two markers etc) = ~ 250
+    // 2048 - 250 = 1798 for lat/longs
+    // It takes on average 5.5 characters per lat/long pair (it's variable depending on where on the planet etc.)
+    // Let's give it some room - and say 7 characters to be safe
+    // This means maximum of 1798/7 = 256 coordinates to render
+    
+    var simplifier = Simplifier();
+    
+    // Copy the original list
+    var simplifiedLogs = logs.slice(0);
+    
+    // This tollerance yields about 50% of the original log list and it looks decent on a map
+    var tollerance = 0.00001;
+
+    // Keep simplifying until we have a small enough list    
+    while (simplifiedLogs.length > 256) {
+        simplifiedLogs = simplifier.simplify(logs, tollerance, false);
+        // Double the tollerance which will exponentially cut down each time. We should find a solution below 256 pretty quick.
+        // Downside is we might get a very low count of we were "just above" 256s on the previous iteration
+        tollerance = tollerance * 2;
     }
 
-    // TODO: FeatureEncoder will blindly accept all the points I give it.
-    //       This need to be enhanced so you can constrain the length of the string
-    //       it must encode.
+    var coordinates = [];
+    for (i = 0; i < simplifiedLogs.length; i++) {
+        coordinates.push(simplifiedLogs[i].latitude);
+        coordinates.push(simplifiedLogs[i].longitude);
+    }
+
     var mapboxFeatureEncoder = MapboxFeatureEncoder(10000);
     mapboxFeatureEncoder.addPath(coordinates, strokeWidth, color);
-    mapboxFeatureEncoder.addMarker(coordinates.slice(0, 2), "car", "0A0");
-    mapboxFeatureEncoder.addMarker(coordinates.slice(coordinates.length - 2, coordinates.length), "embassy", "A00");
-  
-    //var extent = getExtent(coordinates);
-    //var midLatitude = (extent[0] + extent[2]) / 2;
-    //var midLongitude = (extent[1] + extent[3]) / 2;
-    ///
-    //var geoJsonEncoded = encodeURIComponent(JSON.stringify(getGeoJson(coordinates)));
-    //var url = mainUrl + "geojson(" + geoJsonEncoded + ")/auto/" + width + "x" + height + ".png" + accessToken;
-    //var url = mainUrl + "path-5+f44+f44(" + encodedPolyLine + ")/" + midLongitude + "," + midLatitude + "," + zoom + "/" + width + "x" + height + ".png" + accessToken;
+    if (showMarkers) {
+        mapboxFeatureEncoder.addMarker(coordinates.slice(0, 2), "car", "0A0");
+        mapboxFeatureEncoder.addMarker(coordinates.slice(coordinates.length - 2, coordinates.length), "embassy", "A00");
+    }
+
     return mainUrl + mapboxFeatureEncoder.encodeOverlays() + "/auto/" + width + "x" + height + ".png" + accessToken;
-    
-    //path+strokecolor-strokeopacity+fillcolor-fillopacity({polyline})
-    //Examples
-    //http://api.tiles.mapbox.com/v4/examples.map-zr0njcqy/path-5+f44+f44(kumwFrjvbMaf%40kuD%7BnCkS)/-73.99,40.70,12/500x300.png?access_token=pk.eyJ1IjoiZ2VvdGFiIiwiYSI6ImxSa18yY2MifQ.RyYz70IXh-UPd4zuPoqKFA
 }
 
 /**
