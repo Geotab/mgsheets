@@ -189,7 +189,9 @@ function MGMAPTRIPURL(vehicle, fromDate, toDate, color, width, height, strokeWid
     width = width || 350;
     height = height || 350;
     strokeWidth = strokeWidth || 3;
-    showMarkers = showMarkers || true;
+  if (showMarkers === undefined) {
+    showMarkers = true;
+  }
   
     // Got a trip ID - now render it
     logs = api.get("LogRecord", logRecordSearch, 50000);

@@ -108,7 +108,7 @@ function MyGeotabApi(session) {
             if (errorMessage === "INVALIDUSEREXCEPTION" || errorMessage === "DBUNAVAILABLEEXCEPTION") {
               // Session expired or username/password changed
               Logger.log("Session expired or credentials no longer valid");
-              throw "Please authenticate - session expired or credentials no longer valid";
+              throw "Please authenticate - session expired or credentials no longer valid. " + errorMessage;
             }
           }
           
