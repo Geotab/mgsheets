@@ -242,6 +242,48 @@ function MGMAPTRIPURL(vehicle, fromDate, toDate, color, width, height, strokeWid
 }
 
 /**
+ * Returns an array of vehicles
+ *
+ * @param {string} name An optional name of the vehicle to search for. Leave out if all vehicles should be returned.
+ * @param {boolean} showHeadings Set to true if the headings should be returned as the first row in array.
+ * @param {number} refresh Set to any value. Useful if you want to force update on a periodically.
+ * @return {array} A list of vehicles matching the optional name provided.
+ * @customfunction
+ */
+function MGVEHICLES(name, showHeadings, refresh) {
+    var api = getApi_(),
+        vehicles,
+        deviceSearch = {},
+        result = [],
+        values;
+        
+    if (name !== undefined && name !== null && (name instanceof String) && name.trim() !== "") {
+        deviceSearch.name = name;
+    }
+    
+    vehicles = api.get("Device", deviceSearch);
+    
+    result = vehicles.map(function (device) {
+        values = [];
+        values.push(device.id);
+        values.push(device.name);
+        values.push(device.serialNumber);
+        values.push(device.productId);
+        values.push(device.deviceType);
+        values.push(device.comment);
+        values.push(device.vehicleIdentificationNumber);
+        return values;
+    });
+    
+    if (showHeadings === true) {
+        values = ["Id", "Name", "Serial Number", "ProductId", "Device Type", "Comment", "VIN"];
+        result.unshift(values);
+    }
+     
+    return result;
+}
+
+/**
  * Returns a URL that will show a map tile with the location provided.
  *
  * @param {array} location The longitude (x) and latitude (y). Select a range of cells horizontally next to each other.
@@ -354,7 +396,7 @@ function MGSTATUS(vehicles, showHeadings, refresh) {
  * @param {Date} fromDate Trips after this value will be returned.
  * @param {Date} toDate Trips before this value will be returned.
  * @param {boolean} showHeadings Set to true if the headings should be returned as first row in array
- * @param {boolean} refresh - Set to any value - used to force a refresh periodically
+ * @param {boolean} refresh - Set to any value - used to force a refresh periodically.
  * @return {Array} An array of trips
  * @customfunction
  */
