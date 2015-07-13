@@ -4,6 +4,9 @@
 //  range.setValue(range.getValue()+1);
 //}
 
+var mainUrl = "https://api.tiles.mapbox.com/v4/geotab.i8d8afbp/",
+    accessToken = "?access_token=pk.eyJ1IjoiZ2VvdGFiIiwiYSI6IjBqUDNodmsifQ.BJF8wMClneBH89oxyaTuxw";
+
 /**
  * Returns the ID for a device given some arbitrary search string. 
  *
@@ -129,6 +132,46 @@ function getApi_() {
 }
 
 /**
+ * Returns an array of vehicles
+ *
+ * @param {string} name An optional name of the vehicle to search for. Leave out if all vehicles should be returned.
+ * @param {boolean} showHeadings Set to true if the headings should be returned as the first row in array.
+ * @param {number} refresh Set to any value. Useful if you want to force update on a periodically.
+ * @return {array} A list of vehicles matching the optional description provided.
+ * @customfunction
+ */
+function MGVEHICLES(name, showHeadings, refresh) {
+    var api = getApi_(),
+        vehicles,
+        deviceSearch = {},
+        result = [],
+        values;
+
+    if (name !== undefined && name !== null && (typeof name === "string") && name.trim() !== "") {
+        deviceSearch.name = name;
+    }
+
+    vehicles = api.get("Device", deviceSearch);
+    result = vehicles.map(function (device) {
+        values = [];
+        values.push(device.id);
+        values.push(device.name);
+        values.push(device.serialNumber);
+        values.push(device.productId);
+        values.push(device.deviceType);
+        values.push(device.comment);
+        values.push(device.vehicleIdentificationNumber);
+        return values;
+    });
+
+    if (showHeadings === true) {
+        values = ["Id", "Name", "Serial Number", "ProductId", "Device Type", "Comment", "VIN"];
+        result.unshift(values);
+    }
+    return result;
+}
+
+/**
  * Returns a URL that will show a given Trip on the map
  *
  * @param {array} trip The ID (or whole Trip object) to draw
@@ -137,18 +180,22 @@ function getApi_() {
  * @param {number} height The height of the map in pixels 
  * @param {number} strokeWidth How thick the line should be
  * @param {boolean} showMarkers Turn the start/end markers on or off. Default is on.
+ * @param {number} refresh Set to any value. Useful if you want to force update on a periodically. 
  * @return {string} A URL that links to a static map image.
  * @customfunction
  */
-function MGMAPTRIPURL(vehicle, fromDate, toDate, color, width, height, strokeWidth, showMarkers) {
+function MGMAPTRIPURL(vehicle, fromDate, toDate, color, width, height, strokeWidth, showMarkers, refresh) {
     // TODO: Extract these constants
-    var mainUrl = "https://api.tiles.mapbox.com/v4/geotab.i8d8afbp/",
-        accessToken = "?access_token=pk.eyJ1IjoiZ2VvdGFiIiwiYSI6IjBqUDNodmsifQ.BJF8wMClneBH89oxyaTuxw",
-        api = getApi_(),
+    var api = getApi_(),
         logs,
         logRecordSearch,
         i,
         deviceId;
+
+    if (vehicle === undefined || vehicle === null || (typeof vehicle !== "string")) {
+        throw "vehicle was not provided for MGMAPTRIPURL";
+    }
+
 
     if (fromDate !== undefined) {
         // Something was passed, but was it null or a valid date?
@@ -189,9 +236,9 @@ function MGMAPTRIPURL(vehicle, fromDate, toDate, color, width, height, strokeWid
     width = width || 350;
     height = height || 350;
     strokeWidth = strokeWidth || 3;
-  if (showMarkers === undefined) {
-    showMarkers = true;
-  }
+    if (showMarkers === undefined) {
+        showMarkers = true;
+    }
   
     // Got a trip ID - now render it
     logs = api.get("LogRecord", logRecordSearch, 50000);
@@ -242,48 +289,6 @@ function MGMAPTRIPURL(vehicle, fromDate, toDate, color, width, height, strokeWid
 }
 
 /**
- * Returns an array of vehicles
- *
- * @param {string} name An optional name of the vehicle to search for. Leave out if all vehicles should be returned.
- * @param {boolean} showHeadings Set to true if the headings should be returned as the first row in array.
- * @param {number} refresh Set to any value. Useful if you want to force update on a periodically.
- * @return {array} A list of vehicles matching the optional name provided.
- * @customfunction
- */
-function MGVEHICLES(name, showHeadings, refresh) {
-    var api = getApi_(),
-        vehicles,
-        deviceSearch = {},
-        result = [],
-        values;
-        
-    if (name !== undefined && name !== null && (name instanceof String) && name.trim() !== "") {
-        deviceSearch.name = name;
-    }
-    
-    vehicles = api.get("Device", deviceSearch);
-    
-    result = vehicles.map(function (device) {
-        values = [];
-        values.push(device.id);
-        values.push(device.name);
-        values.push(device.serialNumber);
-        values.push(device.productId);
-        values.push(device.deviceType);
-        values.push(device.comment);
-        values.push(device.vehicleIdentificationNumber);
-        return values;
-    });
-    
-    if (showHeadings === true) {
-        values = ["Id", "Name", "Serial Number", "ProductId", "Device Type", "Comment", "VIN"];
-        result.unshift(values);
-    }
-     
-    return result;
-}
-
-/**
  * Returns a URL that will show a map tile with the location provided.
  *
  * @param {array} location The longitude (x) and latitude (y). Select a range of cells horizontally next to each other.
@@ -291,13 +296,12 @@ function MGVEHICLES(name, showHeadings, refresh) {
  * @param {number} width The width of the map in pixels
  * @param {number} height The height of the map in pixels 
  * @param {number} zoom The zoom level. Default is 17 (street level). 1 is the whole world.
+ * @param {number} refresh Set to any value. Useful if you want to force update on a periodically.
  * @return {string} A URL that links to a static map image.
  * @customfunction
  */
-function MGMAPURL(location, color, width, height, zoom) {
-    var mainUrl = "https://api.tiles.mapbox.com/v4/geotab.i8d8afbp/",
-        accessToken = "?access_token=pk.eyJ1IjoiZ2VvdGFiIiwiYSI6IjBqUDNodmsifQ.BJF8wMClneBH89oxyaTuxw",
-        x, y;
+function MGMAPURL(location, color, width, height, zoom, refresh) {
+    var x, y;
     
     // Setup defaults
     color = color || 482;
@@ -396,7 +400,7 @@ function MGSTATUS(vehicles, showHeadings, refresh) {
  * @param {Date} fromDate Trips after this value will be returned.
  * @param {Date} toDate Trips before this value will be returned.
  * @param {boolean} showHeadings Set to true if the headings should be returned as first row in array
- * @param {boolean} refresh - Set to any value - used to force a refresh periodically.
+ * @param {boolean} refresh - Set to any value - used to force a refresh periodically
  * @return {Array} An array of trips
  * @customfunction
  */
@@ -492,9 +496,10 @@ function MGTRIPS(vehicle, fromDate, toDate, showHeadings, refresh) {
  * Returns the address (reverse geocode) for the given latitude and longitude
  *
  * @param {array} location The latitude and longitude. Select a range of cells horizontally next to each other.
+ * @param {number} refresh Set to any value. Useful if you want to force update on a periodically.
  * @customfunction
  */
-function MGREVERSEGEOCODE(location) {
+function MGREVERSEGEOCODE(location, refresh) {
     var x, y;
 
     if (!location.map) {
@@ -521,24 +526,25 @@ function MGREVERSEGEOCODE(location) {
 }
 
 /**
- * Fires when the Google Sheet is opened and adds the menu item required. 
+ * Fires when the Google Sheet is opened and adds the menu item required. Add a custom menu to a spreadsheet.
  */
-function onOpen() {
-    SpreadsheetApp.getUi()
-        .createMenu("MyGeotab")
-        .addItem("Login", "openSideBar")
-        .addToUi();
-};
+function onSpreadsheetOpen() {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet();
+    var menuItems = [];
+    menuItems.push({ name: "Login", functionName: "openSideBar" });
+    sheet.addMenu("MyGeotab", menuItems);
+}
 
 /**
  * Opens the sideBar where the user can provide credentials.
  */
 function openSideBar() {
     var html = HtmlService.createHtmlOutputFromFile('login')
-        .setSandboxMode(HtmlService.SandboxMode.IFRAME)
+        .setSandboxMode(HtmlService.SandboxMode.NATIVE)
         .setTitle('MyGeotab Login')
-        .setWidth(250);
-    SpreadsheetApp.getUi().showSidebar(html);
+        .setWidth(200)
+        .setHeight(250);
+    SpreadsheetApp.getActive().show(html);
 }
 
 /**
@@ -549,14 +555,14 @@ function openSideBar() {
 function getLoginCredentials(formObject) {
     Logger.log("got credentials");
     var api = MyGeotabApi();
-
     var session = api.authenticate(formObject.userName, formObject.password, formObject.database);
-
-    var htmlOutput = HtmlService.createHtmlOutputFromFile('authenticated')
-        .setSandboxMode(HtmlService.SandboxMode.IFRAME)
+    var html = HtmlService.createHtmlOutputFromFile('authenticated')
+        .setSandboxMode(HtmlService.SandboxMode.NATIVE)
         .setWidth(400)
-        .setHeight(300);
-    SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Ready to rumble!');
+        .setHeight(300)
+        .setTitle('Ready to rumble!');
+
+    SpreadsheetApp.getActive().show(html);
 
     var docProperties = PropertiesService.getDocumentProperties();
     docProperties.setProperty('api-session', JSON.stringify(session));
