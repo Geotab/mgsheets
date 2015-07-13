@@ -185,7 +185,6 @@ function MGVEHICLES(name, showHeadings, refresh) {
  * @customfunction
  */
 function MGMAPTRIPURL(vehicle, fromDate, toDate, color, width, height, strokeWidth, showMarkers, refresh) {
-    // TODO: Extract these constants
     var api = getApi_(),
         logs,
         logRecordSearch,
