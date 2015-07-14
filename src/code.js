@@ -1,9 +1,3 @@
-//function updateSeed() {
-//  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Vehicle");
-//  var range = sheet.getRange("I5");
-//  range.setValue(range.getValue()+1);
-//}
-
 var mainUrl = "https://api.tiles.mapbox.com/v4/geotab.i8d8afbp/",
     accessToken = "?access_token=pk.eyJ1IjoiZ2VvdGFiIiwiYSI6IjBqUDNodmsifQ.BJF8wMClneBH89oxyaTuxw";
 
@@ -526,8 +520,9 @@ function MGREVERSEGEOCODE(location, refresh) {
 
 /**
  * Fires when the Google Sheet is opened and adds the menu item required. Add a custom menu to a spreadsheet.
+ * Note certain function names such as onOpen are automatically bound to Google Sheets (in the "new" Google sheets).
  */
-function onSpreadsheetOpen() {
+function onOpen() {
     var sheet = SpreadsheetApp.getActiveSpreadsheet();
     var menuItems = [];
     menuItems.push({ name: "Login", functionName: "openSideBar" });
@@ -542,7 +537,7 @@ function openSideBar() {
         .setSandboxMode(HtmlService.SandboxMode.NATIVE)
         .setTitle('MyGeotab Login')
         .setWidth(200)
-        .setHeight(250);
+        .setHeight(300);
     SpreadsheetApp.getActive().show(html);
 }
 
