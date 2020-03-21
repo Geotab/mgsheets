@@ -66,7 +66,7 @@ function MyGeotabApi(session) {
             // We're not on the right server - update sessino.
             session.server = rpcResult.path;
           }
-          session.credentials = rpcResult.securityToken;
+          session.credentials = rpcResult.credentials;
           return session;
         } else if (rpcResult.error) {
               var response = rpcResult.error;
