@@ -1,3 +1,7 @@
+> [!WARNING]
+> **DEPRECATED — No longer maintained.** This project has not been updated since 2021 and is now archived.
+> For MyGeotab API integrations, refer to the official [Geotab SDK](https://developers.geotab.com).
+
 # mgsheets
 A [Google App-Script library](https://developers.google.com/apps-script/) to use the [MyGeotab API](https://my.geotab.com/sdk) directly from within your Google Sheets as [custom functions](https://developers.google.com/apps-script/guides/sheets/functions).
 
